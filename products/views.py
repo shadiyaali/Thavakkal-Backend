@@ -13,7 +13,8 @@ from rest_framework import generics, permissions
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny   
 from django.contrib.auth import get_user_model
-User = get_user_model() 
+
+user_model = get_user_model()
 import csv
  
 from django.core.files.storage import default_storage
@@ -740,7 +741,7 @@ class UserLoginView(APIView):
             return Response({'error': 'Email and password must be provided'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            user = User.objects.get(email=email)
+            user =user_model.objects.get(email=email)
            
             refresh = RefreshToken.for_user(user)  
             return Response({
@@ -832,7 +833,7 @@ class CartItemsView(generics.ListAPIView):
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
-        print("serializer.datassssssssssssssssss:", serializer.data)   
+        # print("serializer.datassssssssssssssssss:", serializer.data)   
         return Response(serializer.data)
 
     
