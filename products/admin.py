@@ -18,6 +18,7 @@ admin.site.register(CustomizedOrder)
 admin.site.register(Color)
 admin.site.register(FullCustomizedOrder)
 admin.site.register(FullCustomizedMultipleImages)
+admin.site.register(ContactMessage)
  
  
  

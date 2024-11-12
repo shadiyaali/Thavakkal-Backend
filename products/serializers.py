@@ -537,4 +537,8 @@ class OrderUpdateSerializer(serializers.ModelSerializer):
         model = Order
         fields = ['id', 'ordercode', 'order_items']
 
-    
+
+class ContactMessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContactMessage
+        fields = ['full_name', 'email', 'phone', 'message', 'created_at']

@@ -73,5 +73,6 @@ urlpatterns = [
    path('full-orders/<int:order_id>/update-status/', UpdateFullOrderStatusView.as_view(), name='update-order-status'),
    path('status/upload-csv/', StatusCSVUploadView.as_view(), name='upload_csv'),
    path('full-status/upload-csv/', StatusFullCSVUploadView.as_view(), name='upload_csv'),
+   path('contact/', ContactMessageAPIView.as_view(), name='contact-form'),
 ]
  

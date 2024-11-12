@@ -309,5 +309,13 @@ class FullCustomizedMultipleImages(models.Model):
     def __str__(self):
         return f"Additional Image for order {self.product_images.id}" 
 
+class ContactMessage(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE,default = True)
+    full_name = models.CharField(max_length=100)
+    email = models.EmailField()
+    phone = models.CharField(max_length=20)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
-
+    def __str__(self):
+        return f"Message from {self.full_name} at {self.created_at}"

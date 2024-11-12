@@ -192,6 +192,8 @@ CORS_ALLOW_ALL_METHODS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000", 
     "http://localhost:5173",
+    "https://shop.caratreediamonds.com",
+    "https://www.shop.caratreediamonds.com"
     
    
 ]
