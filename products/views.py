@@ -170,25 +170,25 @@ class ProductuserListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        # Get the current user's UserType
+  
         current_user_usertype = request.user.usertypes
 
-        # Print the current user's UserType
+  
         print("Current User's UserType:", current_user_usertype)
 
-        # Filter products based on the current user's UserType
+   
         products = Product.objects.filter(usertypes=current_user_usertype)
 
-        # Print the products being fetched
+    
         print("Fetched Products:", products)
 
-        # Serialize the filtered products
+       
         serializer = ProductSerializer(products, many=True)
 
-        # Print the serialized data
+   
         print("Serialized Product Data:", serializer.data)
 
-        # Return the serialized data in the response
+    
         return Response(serializer.data)
 
  
@@ -313,7 +313,7 @@ class CustomizedProductListCreateView(APIView):
             'SKU': request.data.get('SKU').strip(),  
             'product_name': request.data.get('product_name'),
             'category': request.data.get('category'),
-            'color': request.data.get('color'),
+           
             'gross_weight': request.data.get('gross_weight'),
             'diamond_weight': request.data.get('diamond_weight'),
             'colour_stones': request.data.get('colour_stones'),
@@ -350,7 +350,30 @@ class CustomizedProductListView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
  
 
- 
+class CustomProductuserListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+  
+        current_user_usertype = request.user.usertypes
+
+  
+        print("Current User's UserType:", current_user_usertype)
+
+   
+        products = CustomizedProduct.objects.filter(usertypes=current_user_usertype)
+
+    
+        print("Fetched Products:", products)
+
+       
+        serializer = CustomizedProductSerializer(products, many=True)
+
+   
+        print("Serialized Product Data:", serializer.data)
+
+    
+        return Response(serializer.data)
 
  
 class CustomizedProductUpdateView(APIView):
@@ -373,7 +396,7 @@ class CustomizedProductUpdateView(APIView):
             'SKU': request.data.get('SKU'),
             'product_name': request.data.get('product_name'),
             'category': request.data.get('category'),
-            'color': request.data.get('color'),
+           
             'gross_weight': request.data.get('gross_weight'),
             'diamond_weight': request.data.get('diamond_weight'),
             'colour_stones': request.data.get('colour_stones'),
@@ -784,10 +807,12 @@ class AddToCartView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        print("Request data:", request.data)   
-
         product_id = request.data.get('product_id')
-        quantity = request.data.get('quantity', 1)  
+        quantity = request.data.get('quantity', 1)
+        color = request.data.get('color')  # Retrieve color from request
+
+        if not color:
+            return Response({'detail': 'Please select a color!'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             existing_item = self.queryset.get(product_id=product_id, user=request.user)
@@ -798,28 +823,24 @@ class AddToCartView(generics.CreateAPIView):
             # Fetch the product again to recalculate weights
             product = Product.objects.get(id=product_id)
 
-            # Debug: Print the product's attributes
-            print(f"Product ID: {product.id}, Colour Stones: {product.colour_stones}, Quantity: {existing_item.quantity}")
-
             # Recalculate weights based on new quantity
             existing_item.gross_weight = product.gross_weight * existing_item.quantity
-            existing_item.diamond_weight = (product.diamond_weight or 0) * existing_item.quantity  
-            existing_item.colour_stones = product.colour_stones * existing_item.quantity  # Ensure this is correct
+            existing_item.diamond_weight = (product.diamond_weight or 0) * existing_item.quantity
+            existing_item.colour_stones = product.colour_stones * existing_item.quantity
             existing_item.net_weight = product.net_weight * existing_item.quantity
+            existing_item.color = color  # Update color in cart
 
             existing_item.save()
 
             serializer = self.get_serializer(existing_item)
-            print("Updated item quantity:", serializer.data)  
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Cart.DoesNotExist:
             serializer = self.get_serializer(data=request.data)
             if serializer.is_valid():
-                serializer.save(user=request.user)
-                print("New item added:", serializer.data)  
+                serializer.save(user=request.user, color=color)  # Include color when creating a new cart item
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
-            print("Validation errors:", serializer.errors)   
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
     
     
@@ -940,6 +961,7 @@ class OrderCreateView(generics.CreateAPIView):
                 {
                     "product": item.product.product_name,
                     "quantity": item.quantity,
+                    "color":item.color,
                     "additional_notes": item.additional_notes,
                 } for item in order.order_items.all()
             ]
@@ -1114,22 +1136,33 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
 
  
 
+from urllib.parse import unquote
+
 class UpdateCartQuantityView(APIView):
     permission_classes = [IsAuthenticated]
 
     def patch(self, request, sku):
+        sku = unquote(sku)  # Ensure SKU is decoded
         user = request.user
         quantity = request.data.get('quantity')
+        color = request.data.get('color')
+
+        print("Decoded SKU:", sku)
+        print("Quantity:", quantity)
+        print("Color:", color)
+
+        if quantity is None or quantity < 1:
+            print("Invalid quantity or missing quantity")
+            return Response({"error": "Invalid quantity."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             cart_item = Cart.objects.get(user=user, product__SKU=sku)
+            print("Found cart item:", cart_item)
         except Cart.DoesNotExist:
             return Response({"error": "Cart item not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        if quantity is None or quantity < 1:
-            return Response({"error": "Invalid quantity."}, status=status.HTTP_400_BAD_REQUEST)
-
         cart_item.quantity = quantity
+        cart_item.color = color
         cart_item.gross_weight = cart_item.product.gross_weight * quantity
         cart_item.diamond_weight = (cart_item.product.diamond_weight or 0) * quantity
         cart_item.colour_stones = cart_item.product.colour_stones * quantity
@@ -1138,6 +1171,8 @@ class UpdateCartQuantityView(APIView):
 
         serializer = CartSerializer(cart_item)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 
 
 from django.db.models import Sum   

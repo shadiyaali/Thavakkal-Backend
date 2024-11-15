@@ -19,6 +19,7 @@ urlpatterns = [
    path('customized_products/', CustomizedProductListCreateView.as_view(), name='product-list-create'),
    path('customized_products/<int:pk>/', CustomizedProductDetailView.as_view(), name='product-detail'),
    path('customized_products_list/', CustomizedProductListView.as_view(), name='product-list'),
+   path('custom_products_user_list/', CustomProductuserListView.as_view(), name='product-list'),
    path('customized_products/<int:pk>/update/', CustomizedProductUpdateView.as_view(), name='product-update'),
    path('customized_product/<int:id>/delete/', CustomizedProductDeleteView.as_view(), name='product-delete'),
    path('users/create/', UserCreateView.as_view(), name='user-create'),

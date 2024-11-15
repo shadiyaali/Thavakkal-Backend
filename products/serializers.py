@@ -27,7 +27,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product  
-        fields = ['id', 'SKU', 'product_name', 'category',   'color', 
+        fields = ['id', 'SKU', 'product_name', 'category', 
                   'gross_weight', 'diamond_weight', 'colour_stones', 
                   'net_weight', 'product_size', 'description', 
                   'usertypes', 'product_image', 'additional_images'] 
@@ -44,7 +44,7 @@ class ProductListSerializer(serializers.ModelSerializer):
         model = Product
         fields = [
             'id', 'SKU', 'product_name', 'category', 'category_name',
-            'color', 'gross_weight', 'diamond_weight', 'colour_stones',
+             'gross_weight', 'diamond_weight', 'colour_stones',
             'net_weight', 'product_size', 'description',
             'usertypes', 'product_image', 'additional_images'
         ]
@@ -54,7 +54,7 @@ class ProductListSerializer(serializers.ModelSerializer):
 
     def get_product_image(self, obj):
         if obj.product_image:
-            return obj.product_image.url  # Return the URL if the image exists
+            return obj.product_image.url   
         return None  
 
     
@@ -75,7 +75,7 @@ class CustomizedProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomizedProduct  
-        fields = ['id', 'SKU', 'product_name', 'category',   'color', 
+        fields = ['id', 'SKU', 'product_name', 'category',  
                   'gross_weight', 'diamond_weight', 'colour_stones', 
                   'net_weight', 'product_size', 'description', 
                   'usertypes', 'product_image', 'additional_images'] 
@@ -89,7 +89,7 @@ class CustomizedProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomizedProduct
         fields = ['id', 'SKU', 'product_name','category', 'category_name', 
-                  'color', 'gross_weight', 'diamond_weight', 'colour_stones', 
+                  'gross_weight', 'diamond_weight', 'colour_stones', 
                   'net_weight', 'product_size', 'description', 
                   'usertypes', 'product_image', 'additional_images']
 
@@ -199,52 +199,42 @@ from rest_framework import serializers
 from .models import Cart, Product  
 
 class CartSerializer(serializers.ModelSerializer):
-    product_id = serializers.IntegerField(write_only=True)   
+    product_id = serializers.IntegerField(write_only=True)
+    color = serializers.CharField(write_only=True)  # Add color field
 
     class Meta:
         model = Cart
-        fields = ['id','product_id', 'quantity']
+        fields = ['id', 'product_id', 'quantity', 'color']
 
     def create(self, validated_data):
         product_id = validated_data.pop('product_id')
-        quantity = validated_data.get('quantity', 1)  
+        color = validated_data.pop('color', None)  # Handle color field
+        quantity = validated_data.get('quantity', 1)
 
         try:
             product = Product.objects.get(id=product_id)
         except Product.DoesNotExist:
             raise serializers.ValidationError("Product does not exist.")
 
-       
-        print(f"Creating cart item: Product ID: {product.id}, Colour Stones: {product.colour_stones}, Quantity: {quantity}")
- 
         gross_weight = product.gross_weight * quantity
         diamond_weight = (product.diamond_weight or 0) * quantity
-        colour_stones = product.colour_stones * quantity  
+        colour_stones = product.colour_stones * quantity
         net_weight = product.net_weight * quantity
 
-     
         cart = Cart(
             user=validated_data.get('user'),
             product=product,
             quantity=quantity,
+            color=color,  # Set color here
             gross_weight=gross_weight,
             diamond_weight=diamond_weight,
-            colour_stones=colour_stones,  
+            colour_stones=colour_stones,
             net_weight=net_weight,
         )
         cart.save()
-        print("New item added:", {
-            'id': cart.id,
-            'product_id': cart.product.id,
-            'quantity': cart.quantity,
-            'colour_stones': cart.colour_stones,
-            'gross_weight': cart.gross_weight,
-            'diamond_weight': cart.diamond_weight,
-            'net_weight': cart.net_weight,
-        })
 
         return cart
- 
+
 
 
  
@@ -269,7 +259,7 @@ class CartGetSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Cart
-        fields = ['id', 'product_id', 'quantity', 'product', 'gross_weight', 'colour_stones', 'diamond_weight', 'net_weight']
+        fields = ['id', 'product_id', 'quantity', 'product','color', 'gross_weight', 'colour_stones', 'diamond_weight', 'net_weight']
 
 # class OrderItemSerializer(serializers.ModelSerializer):
 #     product = serializers.CharField(source='product.code')  
@@ -301,7 +291,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OrderItem
-        fields = ['id', 'product', 'quantity', 'additional_notes']
+        fields = ['id', 'product', 'quantity','color', 'additional_notes']
 
     def create(self, validated_data):
         sku = validated_data.pop('product')  
@@ -394,7 +384,7 @@ class OrderItemSerializerss(serializers.ModelSerializer):
 
     class Meta:
         model = OrderItem
-        fields = ['id', 'product', 'quantity',  'additional_notes']
+        fields = ['id', 'product', 'quantity','color',  'additional_notes']
         
         
 class OrderSerializerss(serializers.ModelSerializer):

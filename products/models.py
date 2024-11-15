@@ -31,8 +31,7 @@ from decimal import Decimal
 class Product(models.Model):
     SKU = models.CharField(max_length=100, unique=True)
     product_name = models.CharField(max_length=255)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')
-    color = models.CharField(max_length=100)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')    
     gross_weight = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
     diamond_weight = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
     colour_stones = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
@@ -45,12 +44,11 @@ class Product(models.Model):
     def __str__(self):
         return self.product_name
 
-    # Custom method to display weights without trailing zeros
+   
     def format_weight(self, weight):
         if weight is not None:
             return '{:g}'.format(weight)
         return None
-
 
 class ProductMultipleImages(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='additional_images')
@@ -65,7 +63,6 @@ class CustomizedProduct(models.Model):
     SKU = models.CharField(max_length=100, unique=True)
     product_name = models.CharField(max_length=255)
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='customized_products')
-    color = models.CharField(max_length=100)
     gross_weight = models.DecimalField(max_digits=10, decimal_places=3,blank=True, null=True)
     diamond_weight = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
     colour_stones = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
@@ -176,6 +173,7 @@ class Cart(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='carts')
     quantity = models.PositiveIntegerField(default=1)
     gross_weight = models.DecimalField(max_digits=10, decimal_places=3,  blank=True, null=True)
+    color = models.CharField(max_length=100,null = True)
     diamond_weight = models.DecimalField(max_digits=10, decimal_places=3,  blank=True, null=True)
     colour_stones = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
     net_weight = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
@@ -203,6 +201,7 @@ class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='order_items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='order_items')
     quantity = models.PositiveIntegerField(default=1)
+    color = models.CharField(max_length=100,null = True)
     additional_notes = models.TextField(blank=True, null=True)   
 
     def __str__(self):
