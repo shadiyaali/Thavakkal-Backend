@@ -31,7 +31,6 @@ from decimal import Decimal
 class Product(models.Model):
     SKU = models.CharField(max_length=100, unique=True)
     product_name = models.CharField(max_length=255)
-    color = models.CharField(max_length=255,null=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')    
     gross_weight = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
     diamond_weight = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
