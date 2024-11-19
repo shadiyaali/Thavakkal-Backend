@@ -652,39 +652,36 @@ from .models import Product, Category, UserType
 
 logger = logging.getLogger(__name__)
 
+ 
 import csv
-import os
-from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
-from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework import status
-from .models import Product, Category, UserType, Media
-from django.core.exceptions import ObjectDoesNotExist
+from .models import Product, Category, Media, UserType
 
 class ProductCSVUploadView(APIView):
     def post(self, request, *args, **kwargs):
+        # Get the uploaded CSV file
         csv_file = request.FILES.get('file')
 
         if not csv_file:
             print("No file uploaded.")
             return Response({"error": "No file uploaded. Please upload a CSV file."}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Save the file temporarily
         file_path = default_storage.save(f'tmp/{csv_file.name}', ContentFile(csv_file.read()))
 
         try:
-            with default_storage.open(file_path) as file:
-                decoded_file = file.read().decode('utf-8').splitlines()
+            with default_storage.open(file_path, mode='r', encoding='utf-8') as file:
+                # Read the CSV file
+                decoded_file = file.read().splitlines()
                 reader = csv.DictReader(decoded_file)
 
                 # Expected headers
-                expected_headers = {
-                    'SKU', 'product_name', 'category',
-                    'gross_weight', 'diamond_weight', 'colour_stones',
-                    'net_weight', 'product_size', 'product_image',
-                    'usertypes'
-                }
+                expected_headers = {'SKU', 'product_name', 'category', 'gross_weight', 'diamond_weight', 
+                                    'colour_stones', 'net_weight', 'product_size', 'product_image', 'usertypes'}
 
                 detected_headers = set(reader.fieldnames or [])
                 print(f"Expected headers: {expected_headers}")
@@ -695,6 +692,7 @@ class ProductCSVUploadView(APIView):
                     print(f"CSV file is missing required headers: {missing_headers}")
                     return Response({"error": f"CSV file is missing required headers: {missing_headers}"}, status=status.HTTP_400_BAD_REQUEST)
 
+                # Process each row in the CSV
                 for row in reader:
                     try:
                         # Validate required fields
@@ -731,9 +729,11 @@ class ProductCSVUploadView(APIView):
                                 usertype, _ = UserType.objects.get_or_create(usertype=usertype_name)
                                 product.usertypes.add(usertype)
 
-                        # Fetch product image from the Media model
-                        sku = row['SKU']  # SKU in the format 'P 213'
-                        sku_prefix = sku.replace(" ", "_")  # Replace spaces with underscores, e.g. 'P_213'
+                        # Handle product image assignment
+                        sku = row['SKU']
+                        sku_prefix = sku.replace(" ", "_")  # Replace spaces with underscores (e.g., 'P_213')
+
+                        print(f"Processed SKU: {sku} -> {sku_prefix}")
 
                         # Query the Media model to find images matching the SKU prefix
                         try:
@@ -765,6 +765,7 @@ class ProductCSVUploadView(APIView):
         except Exception as e:
             print(f"Error processing file: {e}")
             return Response({"error": "Failed to process the uploaded file."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 
 
