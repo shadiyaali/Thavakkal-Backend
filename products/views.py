@@ -732,7 +732,7 @@ class ProductCSVUploadView(APIView):
                             net_weight=row['net_weight'],
                             product_size=row['product_size'],
                         )
-
+                        logger.info(f"Product with SKU {row['SKU']} created successfully.")
                         if row.get('usertypes'):
                             usertypes_list = [ut.strip() for ut in row['usertypes'].split(',')]
                             for usertype_name in usertypes_list:
