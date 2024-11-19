@@ -639,18 +639,7 @@ class MediaUploadView(APIView):
  
  
  
-
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework.views import APIView
-import logging
-import os
-from django.conf import settings
-from django.core.files.storage import default_storage
-from django.core.files.base import ContentFile
-from .models import Product, Category, UserType
-
-logger = logging.getLogger(__name__)
+ 
 
  
 import csv
@@ -674,9 +663,9 @@ class ProductCSVUploadView(APIView):
         file_path = default_storage.save(f'tmp/{csv_file.name}', ContentFile(csv_file.read()))
 
         try:
-            with default_storage.open(file_path, mode='r', encoding='utf-8') as file:
-                # Read the CSV file
-                decoded_file = file.read().splitlines()
+            with default_storage.open(file_path, mode='rb') as file:
+                # Read and decode the CSV file content
+                decoded_file = file.read().decode('utf-8').splitlines()
                 reader = csv.DictReader(decoded_file)
 
                 # Expected headers
@@ -704,13 +693,13 @@ class ProductCSVUploadView(APIView):
                         # Check if product with the same SKU already exists
                         if Product.objects.filter(SKU=row['SKU']).exists():
                             print(f"Product with SKU {row['SKU']} already exists.")
-                            continue  # Skip adding this product if it already exists
+                            continue   
 
-                        # Create or get category
+                
                         category_name = row['category']
                         category, _ = Category.objects.get_or_create(category_name=category_name)
 
-                        # Create product
+                
                         product = Product.objects.create(
                             SKU=row['SKU'],
                             product_name=row['product_name'],
@@ -722,29 +711,29 @@ class ProductCSVUploadView(APIView):
                             product_size=row['product_size'],
                         )
 
-                        # Add usertypes to product
+                     
                         if row.get('usertypes'):
                             usertypes_list = [ut.strip() for ut in row['usertypes'].split(',')]
                             for usertype_name in usertypes_list:
                                 usertype, _ = UserType.objects.get_or_create(usertype=usertype_name)
                                 product.usertypes.add(usertype)
 
-                        # Handle product image assignment
+                   
                         sku = row['SKU']
-                        sku_prefix = sku.replace(" ", "_")  # Replace spaces with underscores (e.g., 'P_213')
+                        sku_prefix = sku.replace(" ", "_") 
 
                         print(f"Processed SKU: {sku} -> {sku_prefix}")
 
-                        # Query the Media model to find images matching the SKU prefix
+                    
                         try:
                             media_image = Media.objects.filter(image__icontains=sku_prefix).first()
                             if media_image:
-                                # If an image is found, assign it to the product
+                            
                                 product.product_image = media_image.image.name
                                 product.save()
                                 print(f"Image {media_image.image.name} assigned to product {sku}.")
                             else:
-                                # If no matching image is found, assign the default image
+                          
                                 product.product_image = 'products/default_image.jpg'
                                 product.save()
                                 print(f"No image found for SKU {sku}. Assigning default image.")
