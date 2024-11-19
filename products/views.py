@@ -659,15 +659,13 @@ class ProductCSVUploadView(APIView):
                 decoded_file = file.read().decode('utf-8').splitlines()
                 reader = csv.DictReader(decoded_file)
 
-                # Expected headers
                 expected_headers = {
                     'SKU', 'product_name', 'category',
                     'gross_weight', 'diamond_weight', 'colour_stones',
                     'net_weight', 'product_size', 'product_image',
-                      'usertypes'
+                    'usertypes'
                 }
 
-                # Log detected headers for debugging
                 detected_headers = set(reader.fieldnames or [])
                 logger.debug(f"Expected headers: {expected_headers}")
                 logger.debug(f"Detected headers: {detected_headers}")
@@ -679,22 +677,18 @@ class ProductCSVUploadView(APIView):
 
                 for row in reader:
                     try:
-                        # Validate required fields
-                        required_fields = ['SKU', 'product_name', 'category', 'gross_weight', 'net_weight', 'product_size' ]
+                        required_fields = ['SKU', 'product_name', 'category', 'gross_weight', 'net_weight', 'product_size']
                         for field in required_fields:
                             if not row.get(field):
                                 raise ValueError(f"Field '{field}' is required but missing or empty in the row.")
 
-                        # Check if product with the same SKU already exists
                         if Product.objects.filter(SKU=row['SKU']).exists():
                             logger.warning(f"Product with SKU {row['SKU']} already exists.")
                             return Response({"error": f"Product with SKU {row['SKU']} already exists."}, status=status.HTTP_400_BAD_REQUEST)
 
-                        # Create or get category
                         category_name = row['category']
                         category, _ = Category.objects.get_or_create(category_name=category_name)
 
-                        # Create product
                         product = Product.objects.create(
                             SKU=row['SKU'],
                             product_name=row['product_name'],
@@ -704,17 +698,14 @@ class ProductCSVUploadView(APIView):
                             colour_stones=row.get('colour_stones', ''),
                             net_weight=row['net_weight'],
                             product_size=row['product_size'],
-                         
                         )
 
-                        # Add usertypes to product
                         if row.get('usertypes'):
                             usertypes_list = [ut.strip() for ut in row['usertypes'].split(',')]
                             for usertype_name in usertypes_list:
                                 usertype, _ = UserType.objects.get_or_create(usertype=usertype_name)
                                 product.usertypes.add(usertype)
 
-                        # Associate image from Media
                         media_image = Media.objects.filter(image__startswith=f'media/{row["SKU"]}').first()
                         if media_image:
                             product.product_image = media_image.image
@@ -730,13 +721,14 @@ class ProductCSVUploadView(APIView):
                         return Response({"error": f"Validation error for row with SKU {row.get('SKU', 'unknown')}: {ve}"}, status=status.HTTP_400_BAD_REQUEST)
                     except Exception as e:
                         logger.error(f"Unexpected error for row {row}: {e}")
-                        return Response({"error": f"Failed to process row with SKU {row.get('SKU', 'unknown')}."}, status=status.HTTP_400_BAD_REQUEST)
+                        return Response({"error": f"Failed to process row with SKU {row.get('SKU', 'unknown')}. Error: {e}"}, status=status.HTTP_400_BAD_REQUEST)
 
             return Response({"message": "Products uploaded successfully"}, status=status.HTTP_201_CREATED)
 
         except Exception as e:
             logger.error(f"Error processing file: {e}")
             return Response({"error": "Failed to process the uploaded file."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 
 
