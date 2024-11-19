@@ -685,11 +685,17 @@ class ProductCSVUploadView(APIView):
             logger.error("No file uploaded.")
             return Response({"error": "No file uploaded. Please upload a CSV file."}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Log the file name and size to ensure it is received correctly
+        logger.info(f"Uploaded file: {csv_file.name}, size: {csv_file.size} bytes")
+
+        # Save the file temporarily
         file_path = default_storage.save(f'tmp/{csv_file.name}', ContentFile(csv_file.read()))
+        logger.info(f"File saved temporarily at {file_path}")
 
         try:
             with default_storage.open(file_path) as file:
                 decoded_file = file.read().decode('utf-8').splitlines()
+                logger.debug(f"Decoded file content: {decoded_file[:200]}")  # Log the first 200 characters of the CSV for verification
                 reader = csv.DictReader(decoded_file)
 
                 expected_headers = {
@@ -733,6 +739,7 @@ class ProductCSVUploadView(APIView):
                             product_size=row['product_size'],
                         )
                         logger.info(f"Product with SKU {row['SKU']} created successfully.")
+
                         if row.get('usertypes'):
                             usertypes_list = [ut.strip() for ut in row['usertypes'].split(',')]
                             for usertype_name in usertypes_list:
@@ -756,18 +763,19 @@ class ProductCSVUploadView(APIView):
                                 product.save()
                                 logger.warning(f"No image found for SKU {sku}. Assigning default image.")
                         except Exception as e:
-                            logger.exception(f"Error while searching for image for SKU {sku}: {e}")
+                            logger.error(f"Error while searching for image for SKU {sku}: {e}")
+                            logger.exception("Exception details:")
 
                         logger.info(f"Successfully processed SKU: {sku}")
 
                     except ValueError as ve:
                         logger.error(f"Validation error for row with SKU {row.get('SKU', 'unknown')}: {ve}")
-                        logger.exception("Exception details:")
-                        continue  # Continue to next row after logging the error
+                        logger.exception("Exception details:")  # Logs the full stack trace
+                        continue  
                     except Exception as e:
                         logger.error(f"Unexpected error for row with SKU {row.get('SKU', 'unknown')}: {e}")
-                        logger.exception("Exception details:")
-                        continue  # Continue to next row after logging the error
+                        logger.exception("Exception details:")  # Logs the full stack trace
+                        continue   
 
             return Response({"message": "Products uploaded successfully"}, status=status.HTTP_201_CREATED)
 
