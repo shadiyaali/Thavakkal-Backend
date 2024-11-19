@@ -650,6 +650,19 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+import csv
+import logging
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+from django.conf import settings
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework import status
+from .models import Product, Category, Media, UserType
+import os
+
+logger = logging.getLogger(__name__)
+
 class ProductCSVUploadView(APIView):
     def post(self, request, *args, **kwargs):
         csv_file = request.FILES.get('file')
@@ -670,7 +683,7 @@ class ProductCSVUploadView(APIView):
                     'SKU', 'product_name', 'category',
                     'gross_weight', 'diamond_weight', 'colour_stones',
                     'net_weight', 'product_size', 'product_image',
-                     'usertypes'
+                    'usertypes'
                 }
 
                 # Log detected headers for debugging
@@ -710,7 +723,6 @@ class ProductCSVUploadView(APIView):
                             colour_stones=row.get('colour_stones', ''),
                             net_weight=row['net_weight'],
                             product_size=row['product_size'],
-                            # description=row['description']
                         )
 
                         # Add usertypes to product
@@ -721,13 +733,20 @@ class ProductCSVUploadView(APIView):
                                 product.usertypes.add(usertype)
 
                         # Associate image from Media
-                        media_image = Media.objects.filter(image__startswith=f'media/{row["SKU"]}').first()
-                        if media_image:
-                            product.product_image = media_image.image
+                        # Look for the image corresponding to the SKU, e.g., 'media/SD162.jpg'
+                        image_filename = f"{row['SKU']}.jpg"  # Expecting image named by SKU, e.g., 'SD162.jpg'
+                        image_path = os.path.join(settings.MEDIA_ROOT, 'media', image_filename)
+
+                        if os.path.exists(image_path):
+                            # If the image exists, associate it with the product
+                            product.product_image = os.path.join('media', image_filename)  # Corrected path without extra 'media' folder
                             product.save()
-                            logger.info(f"Image {media_image.image} assigned to product {row['SKU']}.")
+                            logger.info(f"Image {image_filename} assigned to product {row['SKU']}.")
                         else:
-                            logger.warning(f"No image found in Media model for SKU {row['SKU']}.")
+                            logger.warning(f"No image found for SKU {row['SKU']} at path {image_path}. Assigning default image.")
+                            # Optionally, assign a default image if the image is not found
+                            product.product_image = 'media/products/default_image.jpg'
+                            product.save()
 
                         logger.info(f"Successfully processed SKU: {row['SKU']}")
 
