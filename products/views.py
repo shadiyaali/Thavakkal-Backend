@@ -133,7 +133,7 @@ class ProductListCreateView(APIView):
             'diamond_weight': request.data.get('diamond_weight'),
             'colour_stones': request.data.get('colour_stones'),
             'net_weight': request.data.get('net_weight'),
-            'product_size': request.data.get('product_size'),
+           
             'description': request.data.get('description'),
             'usertypes': cleaned_usertypes,
             'product_image': request.FILES.get('product_image'),
@@ -217,7 +217,7 @@ class ProductUpdateView(APIView):
             'diamond_weight': request.data.get('diamond_weight'),
             'colour_stones': request.data.get('colour_stones'),
             'net_weight': request.data.get('net_weight'),
-            'product_size': request.data.get('product_size'),
+          
             'description': request.data.get('description'),
             'usertypes': cleaned_usertypes,
         }
@@ -318,7 +318,7 @@ class CustomizedProductListCreateView(APIView):
             'diamond_weight': request.data.get('diamond_weight'),
             'colour_stones': request.data.get('colour_stones'),
             'net_weight': request.data.get('net_weight'),
-            'product_size': request.data.get('product_size'),
+       
             'description': request.data.get('description'),
             'usertypes': cleaned_usertypes,
             'product_image': request.FILES.get('product_image'),
@@ -401,7 +401,7 @@ class CustomizedProductUpdateView(APIView):
             'diamond_weight': request.data.get('diamond_weight'),
             'colour_stones': request.data.get('colour_stones'),
             'net_weight': request.data.get('net_weight'),
-            'product_size': request.data.get('product_size'),
+        
             'description': request.data.get('description'),
             'usertypes': cleaned_usertypes,
         }
@@ -683,7 +683,7 @@ class ProductCSVUploadView(APIView):
                 expected_headers = {
                     'SKU', 'product_name', 'category',
                     'gross_weight', 'diamond_weight', 'colour_stones',
-                    'net_weight', 'product_size', 'product_image',
+                    'net_weight', 'product_image',
                     'usertypes'
                 }
 
@@ -698,7 +698,7 @@ class ProductCSVUploadView(APIView):
 
                 for row in reader:
                     try:
-                        required_fields = ['SKU', 'product_name', 'category', 'gross_weight', 'net_weight', 'product_size']
+                        required_fields = ['SKU', 'product_name', 'category', 'gross_weight', 'net_weight' ]
                         for field in required_fields:
                             if not row.get(field):
                                 raise ValueError(f"Field '{field}' is required but missing or empty in the row.")
@@ -718,7 +718,7 @@ class ProductCSVUploadView(APIView):
                             diamond_weight=row.get('diamond_weight', 0),
                             colour_stones=row.get('colour_stones', ''),
                             net_weight=row['net_weight'],
-                            product_size=row['product_size'],
+                          
                         )
                         logger.info(f"Product with SKU {row['SKU']} created successfully.")
 

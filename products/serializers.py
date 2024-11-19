@@ -29,7 +29,7 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product  
         fields = ['id', 'SKU', 'product_name', 'category', 
                   'gross_weight', 'diamond_weight', 'colour_stones', 
-                  'net_weight', 'product_size', 'description', 
+                  'net_weight',  'description', 
                   'usertypes', 'product_image', 'additional_images'] 
 
 
@@ -45,7 +45,7 @@ class ProductListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'SKU', 'product_name', 'category', 'category_name',
              'gross_weight', 'diamond_weight', 'colour_stones',
-            'net_weight', 'product_size', 'description',
+            'net_weight',   'description',
             'usertypes', 'product_image', 'additional_images'
         ]
 
@@ -77,7 +77,7 @@ class CustomizedProductSerializer(serializers.ModelSerializer):
         model = CustomizedProduct  
         fields = ['id', 'SKU', 'product_name', 'category',  
                   'gross_weight', 'diamond_weight', 'colour_stones', 
-                  'net_weight', 'product_size', 'description', 
+                  'net_weight',  'description', 
                   'usertypes', 'product_image', 'additional_images'] 
 
 
@@ -90,7 +90,7 @@ class CustomizedProductListSerializer(serializers.ModelSerializer):
         model = CustomizedProduct
         fields = ['id', 'SKU', 'product_name','category', 'category_name', 
                   'gross_weight', 'diamond_weight', 'colour_stones', 
-                  'net_weight', 'product_size', 'description', 
+                  'net_weight',   'description', 
                   'usertypes', 'product_image', 'additional_images']
 
     def get_category_name(self, obj):

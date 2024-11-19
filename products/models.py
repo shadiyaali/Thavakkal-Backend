@@ -36,7 +36,6 @@ class Product(models.Model):
     diamond_weight = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
     colour_stones = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
     net_weight = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
-    product_size = models.CharField(max_length=100)
     product_image = models.ImageField(upload_to='products/', blank=True, null=True)
     description = models.TextField(null=True, blank=True)
     usertypes = models.ManyToManyField(UserType, related_name='products_usertype')
@@ -66,10 +65,9 @@ class CustomizedProduct(models.Model):
     gross_weight = models.DecimalField(max_digits=10, decimal_places=3,blank=True, null=True)
     diamond_weight = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
     colour_stones = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
-    net_weight = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
-    product_size = models.CharField(max_length=100)
+    net_weight = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)   
     product_image = models.ImageField(upload_to='cus_products/', blank=True, null=True)
-    description = models.TextField()
+    description = models.TextField(null=True,blank=True)
     usertypes = models.ManyToManyField(UserType, related_name='cus_products_usertype')
 
     def __str__(self):
