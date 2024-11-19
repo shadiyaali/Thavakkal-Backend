@@ -663,6 +663,20 @@ formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
+import re
+import os
+import csv
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework import status
+from .models import Product, Category, Media, UserType
+import logging
+
+# Set up logging
+logger = logging.getLogger(__name__)
+
 class ProductCSVUploadView(APIView):
     def post(self, request, *args, **kwargs):
         csv_file = request.FILES.get('file')
@@ -742,7 +756,7 @@ class ProductCSVUploadView(APIView):
                                 product.save()
                                 logger.warning(f"No image found for SKU {sku}. Assigning default image.")
                         except Exception as e:
-                            logger.error(f"Error while searching for image: {e}")
+                            logger.error(f"Error while searching for image for SKU {sku}: {e}")
 
                         logger.info(f"Successfully processed SKU: {sku}")
 
