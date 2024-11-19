@@ -640,8 +640,8 @@ class MediaUploadView(APIView):
  
  
  
-
- 
+import re
+import os
 import csv
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
@@ -652,25 +652,26 @@ from .models import Product, Category, Media, UserType
 
 class ProductCSVUploadView(APIView):
     def post(self, request, *args, **kwargs):
- 
         csv_file = request.FILES.get('file')
 
         if not csv_file:
             print("No file uploaded.")
             return Response({"error": "No file uploaded. Please upload a CSV file."}, status=status.HTTP_400_BAD_REQUEST)
 
-      
         file_path = default_storage.save(f'tmp/{csv_file.name}', ContentFile(csv_file.read()))
 
         try:
-            with default_storage.open(file_path, mode='rb') as file:
-               
+            with default_storage.open(file_path) as file:
                 decoded_file = file.read().decode('utf-8').splitlines()
                 reader = csv.DictReader(decoded_file)
 
-             
-                expected_headers = {'SKU', 'product_name', 'category', 'gross_weight', 'diamond_weight', 
-                                    'colour_stones', 'net_weight', 'product_size', 'product_image', 'usertypes'}
+           
+                expected_headers = {
+                    'SKU', 'product_name', 'category',
+                    'gross_weight', 'diamond_weight', 'colour_stones',
+                    'net_weight', 'product_size', 'product_image',
+                    'usertypes'
+                }
 
                 detected_headers = set(reader.fieldnames or [])
                 print(f"Expected headers: {expected_headers}")
@@ -681,25 +682,24 @@ class ProductCSVUploadView(APIView):
                     print(f"CSV file is missing required headers: {missing_headers}")
                     return Response({"error": f"CSV file is missing required headers: {missing_headers}"}, status=status.HTTP_400_BAD_REQUEST)
 
-           
                 for row in reader:
                     try:
-                
+                   
                         required_fields = ['SKU', 'product_name', 'category', 'gross_weight', 'net_weight', 'product_size']
                         for field in required_fields:
                             if not row.get(field):
                                 raise ValueError(f"Field '{field}' is required but missing or empty in the row.")
 
-                 
+                       
                         if Product.objects.filter(SKU=row['SKU']).exists():
                             print(f"Product with SKU {row['SKU']} already exists.")
                             continue  
 
-                        # Create or get category
+                    
                         category_name = row['category']
                         category, _ = Category.objects.get_or_create(category_name=category_name)
 
-                        # Create product
+                    
                         product = Product.objects.create(
                             SKU=row['SKU'],
                             product_name=row['product_name'],
@@ -711,7 +711,7 @@ class ProductCSVUploadView(APIView):
                             product_size=row['product_size'],
                         )
 
-                        # Add usertypes to product
+                         
                         if row.get('usertypes'):
                             usertypes_list = [ut.strip() for ut in row['usertypes'].split(',')]
                             for usertype_name in usertypes_list:
@@ -719,26 +719,29 @@ class ProductCSVUploadView(APIView):
                                 product.usertypes.add(usertype)
 
                  
-                        sku = row['SKU']
+                        sku = row['SKU']  
                         sku_prefix = sku.replace(" ", "_")  
 
-                        print(f"Processed SKU: {sku} -> {sku_prefix}")
-
-                  
+                    
                         try:
                             media_image = Media.objects.filter(image__icontains=sku_prefix).first()
                             if media_image:
-                            
-                                product.product_image = media_image.image.name
+                               
+                                original_image_name = media_image.image.name
+                                cleaned_image_name =re.sub(r'_[^_]+\.', '.', original_image_name)   
+
+                     
+                                product.product_image = cleaned_image_name
                                 product.save()
-                                print(f"Image {media_image.image.name} assigned to product {sku}.")
+                                print(f"Image {cleaned_image_name} assigned to product {sku}.")
                             else:
-                            
+                               
                                 product.product_image = 'products/default_image.jpg'
                                 product.save()
                                 print(f"No image found for SKU {sku}. Assigning default image.")
                         except Exception as e:
                             print(f"Error while searching for image: {e}")
+
 
                         print(f"Successfully processed SKU: {sku}")
 
@@ -754,7 +757,6 @@ class ProductCSVUploadView(APIView):
         except Exception as e:
             print(f"Error processing file: {e}")
             return Response({"error": "Failed to process the uploaded file."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 
 
