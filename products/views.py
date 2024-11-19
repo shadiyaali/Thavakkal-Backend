@@ -650,64 +650,50 @@ from rest_framework.views import APIView
 from rest_framework import status
 from .models import Product, Category, Media, UserType
 
-import csv
-import logging
-from django.core.files.base import ContentFile
-from django.core.files.storage import default_storage
-from django.conf import settings
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework import status
-from .models import Product, Category, Media, UserType
-import os
-
-logger = logging.getLogger(__name__)
-
 class ProductCSVUploadView(APIView):
     def post(self, request, *args, **kwargs):
+ 
         csv_file = request.FILES.get('file')
 
         if not csv_file:
-            logger.error("No file uploaded.")
+            print("No file uploaded.")
             return Response({"error": "No file uploaded. Please upload a CSV file."}, status=status.HTTP_400_BAD_REQUEST)
 
+      
         file_path = default_storage.save(f'tmp/{csv_file.name}', ContentFile(csv_file.read()))
 
         try:
-            with default_storage.open(file_path) as file:
+            with default_storage.open(file_path, mode='rb') as file:
+               
                 decoded_file = file.read().decode('utf-8').splitlines()
                 reader = csv.DictReader(decoded_file)
 
-                # Expected headers
-                expected_headers = {
-                    'SKU', 'product_name', 'category',
-                    'gross_weight', 'diamond_weight', 'colour_stones',
-                    'net_weight', 'product_size', 'product_image',
-                    'usertypes'
-                }
+             
+                expected_headers = {'SKU', 'product_name', 'category', 'gross_weight', 'diamond_weight', 
+                                    'colour_stones', 'net_weight', 'product_size', 'product_image', 'usertypes'}
 
-                # Log detected headers for debugging
                 detected_headers = set(reader.fieldnames or [])
-                logger.debug(f"Expected headers: {expected_headers}")
-                logger.debug(f"Detected headers: {detected_headers}")
+                print(f"Expected headers: {expected_headers}")
+                print(f"Detected headers: {detected_headers}")
 
                 if not expected_headers.issubset(detected_headers):
                     missing_headers = expected_headers - detected_headers
-                    logger.error(f"CSV file is missing required headers: {missing_headers}")
+                    print(f"CSV file is missing required headers: {missing_headers}")
                     return Response({"error": f"CSV file is missing required headers: {missing_headers}"}, status=status.HTTP_400_BAD_REQUEST)
 
+           
                 for row in reader:
                     try:
-                        # Validate required fields
+                
                         required_fields = ['SKU', 'product_name', 'category', 'gross_weight', 'net_weight', 'product_size']
                         for field in required_fields:
                             if not row.get(field):
                                 raise ValueError(f"Field '{field}' is required but missing or empty in the row.")
 
-                        # Check if product with the same SKU already exists
+                 
                         if Product.objects.filter(SKU=row['SKU']).exists():
-                            logger.warning(f"Product with SKU {row['SKU']} already exists.")
-                            return Response({"error": f"Product with SKU {row['SKU']} already exists."}, status=status.HTTP_400_BAD_REQUEST)
+                            print(f"Product with SKU {row['SKU']} already exists.")
+                            continue  
 
                         # Create or get category
                         category_name = row['category']
@@ -732,35 +718,41 @@ class ProductCSVUploadView(APIView):
                                 usertype, _ = UserType.objects.get_or_create(usertype=usertype_name)
                                 product.usertypes.add(usertype)
 
-                        # Associate image from Media
-                        # Look for the image corresponding to the SKU, e.g., 'media/SD162.jpg'
-                        image_filename = f"{row['SKU']}.jpg"  # Expecting image named by SKU, e.g., 'SD162.jpg'
-                        image_path = os.path.join(settings.MEDIA_ROOT, 'media', image_filename)
+                 
+                        sku = row['SKU']
+                        sku_prefix = sku.replace(" ", "_")  
 
-                        if os.path.exists(image_path):
-                            # If the image exists, associate it with the product
-                            product.product_image = os.path.join('media', image_filename)  # Corrected path without extra 'media' folder
-                            product.save()
-                            logger.info(f"Image {image_filename} assigned to product {row['SKU']}.")
-                        else:
-                            logger.warning(f"No image found for SKU {row['SKU']} at path {image_path}. Assigning default image.")
-                            # Optionally, assign a default image if the image is not found
-                            product.product_image = 'media/products/default_image.jpg'
-                            product.save()
+                        print(f"Processed SKU: {sku} -> {sku_prefix}")
 
-                        logger.info(f"Successfully processed SKU: {row['SKU']}")
+                  
+                        try:
+                            media_image = Media.objects.filter(image__icontains=sku_prefix).first()
+                            if media_image:
+                            
+                                product.product_image = media_image.image.name
+                                product.save()
+                                print(f"Image {media_image.image.name} assigned to product {sku}.")
+                            else:
+                            
+                                product.product_image = 'products/default_image.jpg'
+                                product.save()
+                                print(f"No image found for SKU {sku}. Assigning default image.")
+                        except Exception as e:
+                            print(f"Error while searching for image: {e}")
+
+                        print(f"Successfully processed SKU: {sku}")
 
                     except ValueError as ve:
-                        logger.error(f"Validation error for row {row}: {ve}")
+                        print(f"Validation error for row {row}: {ve}")
                         return Response({"error": f"Validation error for row with SKU {row.get('SKU', 'unknown')}: {ve}"}, status=status.HTTP_400_BAD_REQUEST)
                     except Exception as e:
-                        logger.error(f"Unexpected error for row {row}: {e}")
+                        print(f"Unexpected error for row {row}: {e}")
                         return Response({"error": f"Failed to process row with SKU {row.get('SKU', 'unknown')}."}, status=status.HTTP_400_BAD_REQUEST)
 
             return Response({"message": "Products uploaded successfully"}, status=status.HTTP_201_CREATED)
 
         except Exception as e:
-            logger.error(f"Error processing file: {e}")
+            print(f"Error processing file: {e}")
             return Response({"error": "Failed to process the uploaded file."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
