@@ -23,7 +23,7 @@ class ProductMultipleImagesSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     usertypes = serializers.PrimaryKeyRelatedField(queryset=UserType.objects.all(), many=True)
     additional_images = ProductMultipleImagesSerializer(many=True, required=False) 
-      
+    category = CategorySerializer()
 
     class Meta:
         model = Product  
