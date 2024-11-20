@@ -23,7 +23,7 @@ class ProductMultipleImagesSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     usertypes = serializers.PrimaryKeyRelatedField(queryset=UserType.objects.all(), many=True)
     additional_images = ProductMultipleImagesSerializer(many=True, required=False) 
-    category = CategorySerializer()
+   
 
     class Meta:
         model = Product  
@@ -32,6 +32,18 @@ class ProductSerializer(serializers.ModelSerializer):
                   'net_weight',  'description', 
                   'usertypes', 'product_image', 'additional_images'] 
 
+
+class ProductCartSerializer(serializers.ModelSerializer):
+    usertypes = serializers.PrimaryKeyRelatedField(queryset=UserType.objects.all(), many=True)
+    additional_images = ProductMultipleImagesSerializer(many=True, required=False) 
+    category = CategorySerializer()
+
+    class Meta:
+        model = Product  
+        fields = ['id', 'SKU', 'product_name', 'category', 
+                  'gross_weight', 'diamond_weight', 'colour_stones', 
+                  'net_weight',  'description', 
+                  'usertypes', 'product_image', 'additional_images'] 
 
 class ProductListSerializer(serializers.ModelSerializer):
     usertypes = serializers.PrimaryKeyRelatedField(queryset=UserType.objects.all(), many=True)
@@ -255,7 +267,7 @@ class CartTotalSerializer(serializers.Serializer):
 
 class CartGetSerializer(serializers.ModelSerializer):
     product_id = serializers.IntegerField(write_only=True) 
-    product = ProductSerializer(read_only=True)
+    product = ProductCartSerializer(read_only=True)
 
     class Meta:
         model = Cart
