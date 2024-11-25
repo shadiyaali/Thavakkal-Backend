@@ -193,7 +193,6 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000", 
     "http://localhost:5173",
     "https://shop.caratreediamonds.com",
-    "https://www.shop.caratreediamonds.com",
     "https://master.d3btcpc72guulu.amplifyapp.com"
     
    
