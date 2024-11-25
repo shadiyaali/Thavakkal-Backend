@@ -170,7 +170,7 @@ class ProductuserListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-  
+       
         current_user_usertype = request.user.usertypes
 
   
@@ -183,10 +183,10 @@ class ProductuserListView(APIView):
         print("Fetched Products:", products)
 
        
-        serializer = ProductSerializer(products, many=True)
+        serializer = ProductListSerializer(products, many=True)
 
    
-        print("Serialized Product Data:", serializer.data)
+        print("Serialized Product Datassssssssssssssss:", serializer.data)
 
     
         return Response(serializer.data)
@@ -367,7 +367,7 @@ class CustomProductuserListView(APIView):
         print("Fetched Products:", products)
 
        
-        serializer = CustomizedProductSerializer(products, many=True)
+        serializer = CustomizedProductListSerializer(products, many=True)
 
    
         print("Serialized Product Data:", serializer.data)
