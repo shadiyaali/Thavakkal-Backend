@@ -840,36 +840,33 @@ class AddToCartView(generics.CreateAPIView):
     def post(self, request, *args, **kwargs):
         product_id = request.data.get('product_id')
         quantity = request.data.get('quantity', 1)
-        color = request.data.get('color')  # Retrieve color from request
-
-        if not color:
-            return Response({'detail': 'Please select a color!'}, status=status.HTTP_400_BAD_REQUEST)
+        color = request.data.get('color', '')  # Default to an empty string if no color is selected
 
         try:
             existing_item = self.queryset.get(product_id=product_id, user=request.user)
 
-            # Increment quantity
+            # Update existing item
             existing_item.quantity += quantity
 
-            # Fetch the product again to recalculate weights
             product = Product.objects.get(id=product_id)
 
-            # Recalculate weights based on new quantity
             existing_item.gross_weight = product.gross_weight * existing_item.quantity
             existing_item.diamond_weight = (product.diamond_weight or 0) * existing_item.quantity
             existing_item.colour_stones = product.colour_stones * existing_item.quantity
             existing_item.net_weight = product.net_weight * existing_item.quantity
-            existing_item.color = color  # Update color in cart
+            existing_item.color = color  # Store the empty string if no color is selected
 
             existing_item.save()
 
             serializer = self.get_serializer(existing_item)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Cart.DoesNotExist:
+            # Create new item if it doesn't exist
             serializer = self.get_serializer(data=request.data)
             if serializer.is_valid():
-                serializer.save(user=request.user, color=color)  # Include color when creating a new cart item
+                serializer.save(user=request.user, color=color)  # Save with empty string color if not selected
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
+            print("serializer.errors",serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -1520,7 +1517,9 @@ class PendingOrdersView(APIView):
         pending_orders = CustomizedOrder.objects.filter(status='pending')
         serializer = CustomizedOrderSerializer(pending_orders, many=True)
         return Response(serializer.data)
-    
+
+
+
 class OrderApprovalView(APIView):
     def patch(self, request, pk):
         try:
@@ -1560,31 +1559,31 @@ class  ApprovedOrdersView(APIView):
     
 from datetime import timedelta
 from django.utils import timezone
- 
 class GenerateOrderIDView(APIView):
     def patch(self, request, pk=None):
         order = get_object_or_404(CustomizedOrder, pk=pk)
         ordercode = request.data.get('ordercode')
-        due_date = request.data.get('due_date')   
+        due_date = request.data.get('due_date')
 
         if ordercode:
             order.ordercode = ordercode
 
-    
-            if due_date:
+            # Only update due_date if it's provided
+            if due_date is not None:
                 order.due_date = due_date
-            else:
-                 
-                order.due_date = timezone.now() + timedelta(days=7)
 
+            # Save the order
             order.save()
+
             return Response({
                 'status': 'Order ID generated',
                 'ordercode': order.ordercode,
                 'due_date': order.due_date
             }, status=status.HTTP_200_OK)
-        
+
         return Response({'error': 'Order code not provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+
 
     
 class UpdateCustomizedOrderView(APIView):
@@ -1662,22 +1661,25 @@ class  ApprovedFullOrdersView(APIView):
     
 
 
+from datetime import datetime
 
 class GenerateFullOrderIDView(APIView):
     def patch(self, request, pk=None):
         order = get_object_or_404(FullCustomizedOrder, pk=pk)
         ordercode = request.data.get('ordercode')
-        due_date = request.data.get('due_date')   
+        due_date = request.data.get('due_date')  
 
         if ordercode:
             order.ordercode = ordercode
 
-    
+        
             if due_date:
-                order.due_date = due_date
+                try:
+                    order.due_date = datetime.fromisoformat(due_date)   
+                except ValueError:
+                    return Response({'error': 'Invalid due_date format'}, status=status.HTTP_400_BAD_REQUEST)
             else:
-                 
-                order.due_date = timezone.now() + timedelta(days=7)
+                order.due_date = None  
 
             order.save()
             return Response({
@@ -1685,8 +1687,11 @@ class GenerateFullOrderIDView(APIView):
                 'ordercode': order.ordercode,
                 'due_date': order.due_date
             }, status=status.HTTP_200_OK)
-        
+
         return Response({'error': 'Order code not provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
 
 
 
@@ -1777,29 +1782,48 @@ class StatusCSVUploadView(APIView):
             print(f"Row data: {row}") 
 
             order_id = row.get('Order Id')
-            order_status = row.get('New Status').strip()  
+            order_status = row.get('New Status', '').strip()  # Default to empty string if 'New Status' is missing
 
+            if not order_id:
+                print(f"Order Id is missing in this row. Skipping.")
+                continue  # Skip rows without an Order Id
             
-            if not CustomizedOrder.objects.filter(ordercode=order_id).exists():
+            # Check if the order exists in either table
+            order = None
+            if CustomizedOrder.objects.filter(ordercode=order_id).exists():
+                order = CustomizedOrder.objects.get(ordercode=order_id)
+            elif FullCustomizedOrder.objects.filter(ordercode=order_id).exists():
+                order = FullCustomizedOrder.objects.get(ordercode=order_id)
+
+            if not order:
                 print(f"Order with ordercode {order_id} does not exist.")
                 not_found_orders.append(order_id)  
                 continue   
             
-   
-            if order_status.lower() not in dict(CustomizedOrder.NEW_STATUS_CHOICES):
-                print(f"Invalid status '{order_status}' for order {order_id}.")
-                continue  
-            try:
-                order = CustomizedOrder.objects.get(ordercode=order_id)
-                order.new_status = order_status.lower()   
-                order.save()
-                print(f"Order {order_id} status updated to {order_status}.")
-                updated_orders.append(order_id)
-            except Exception as e:
-                print(f"Failed to update order {order_id}: {str(e)}")
-                return Response({'error': f'Failed to update order {order_id}: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            # If no order status is provided, skip updating the status or leave it unchanged
+            if order_status:
+                # Validate the status for either type of order
+                if isinstance(order, CustomizedOrder):
+                    valid_statuses = dict(CustomizedOrder.NEW_STATUS_CHOICES)
+                else:
+                    valid_statuses = dict(FullCustomizedOrder.NEW_STATUS_CHOICES)
 
- 
+                if order_status.lower() not in valid_statuses:
+                    print(f"Invalid status '{order_status}' for order {order_id}. Skipping.")
+                    continue  
+
+                try:
+                    # Update the status if provided
+                    order.new_status = order_status.lower()   
+                    order.save()
+                    print(f"Order {order_id} status updated to {order_status}.")
+                    updated_orders.append(order_id)
+                except Exception as e:
+                    print(f"Failed to update order {order_id}: {str(e)}")
+                    return Response({'error': f'Failed to update order {order_id}: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            else:
+                print(f"No status provided for order {order_id}, skipping status update.")
+
         response_data = {}
         if updated_orders:
             response_data['success'] = f'Updated statuses for orders: {updated_orders}'
@@ -1807,6 +1831,7 @@ class StatusCSVUploadView(APIView):
             response_data['not_found'] = f'Orders not found: {not_found_orders}'
 
         return Response(response_data, status=status.HTTP_200_OK)
+
 
 
 class StatusFullCSVUploadView(APIView):

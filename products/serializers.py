@@ -212,7 +212,7 @@ from .models import Cart, Product
 
 class CartSerializer(serializers.ModelSerializer):
     product_id = serializers.IntegerField(write_only=True)
-    color = serializers.CharField(write_only=True)  # Add color field
+    color = serializers.CharField(allow_blank=True, required=False)# Add color field
 
     class Meta:
         model = Cart
@@ -300,7 +300,7 @@ class CartGetSerializer(serializers.ModelSerializer):
 
 class OrderItemSerializer(serializers.ModelSerializer):
     product = serializers.CharField()  
-
+    color = serializers.CharField(required=False, allow_blank=True, default=None)
     class Meta:
         model = OrderItem
         fields = ['id', 'product', 'quantity','color', 'additional_notes']
