@@ -122,7 +122,6 @@ class UserSerializer(serializers.ModelSerializer):
             'mobile_number',
             'whatsapp_number',
             'company_name',
-            'billing_address',
             'shipping_address',
             'company_logo',
             'company_email',
@@ -163,7 +162,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             'mobile_number',
             'whatsapp_number',
             'company_name',
-            'billing_address',
+           
             'shipping_address',
             'company_logo',
             'company_email',
