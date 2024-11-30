@@ -183,6 +183,12 @@ class Cart(models.Model):
         return None
 
 class Order(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('delivered', 'delivered'),
+         
+    ] 
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='orders')
     ordercode = models.CharField(max_length=255, blank=True)
     total_gross_weight = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
@@ -190,6 +196,7 @@ class Order(models.Model):
     total_colour_stones = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     total_net_weight = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     created_at = models.DateTimeField(auto_now_add=True)
+  
 
     def __str__(self):
         return f"Order {self.user_id} by {self.user.email}"

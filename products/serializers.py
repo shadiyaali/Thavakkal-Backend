@@ -404,7 +404,7 @@ class OrderSerializerss(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ['id', 'ordercode', 'user', 'total_gross_weight', 'total_diamond_weight', 
+        fields = ['id', 'ordercode', 'user', 'total_gross_weight', 'total_diamond_weight','created_at' ,'status',
                   'total_colour_stones', 'total_net_weight', 'created_at', 'order_items']
         extra_kwargs = {'user': {'read_only': True}}
         
@@ -425,10 +425,10 @@ class CustomizedOrderSerializer(serializers.ModelSerializer):
         model = CustomizedOrder
         fields = [
             'id', 'new_status', 'product', 'size', 'user','gram', 'ordercode', 
-            'cent', 'color', 'description', 'quantity', 'due_date'
+            'cent', 'color', 'description', 'quantity', 'due_date','created_at'
         ]
         extra_kwargs = {'user': {'read_only': True}}
-
+   
     def validate_new_status(self, value):
         valid_choices = [choice[0] for choice in CustomizedOrder.NEW_STATUS_CHOICES]
         if value not in valid_choices:
@@ -482,7 +482,7 @@ class FullCustomizedOrderListSerializer(serializers.ModelSerializer):
     class Meta:
         model = FullCustomizedOrder
         fields = [
-            'id','user','new_status' ,'category' ,'due_date', 'design_number',
+            'id','user','new_status' ,'category' ,'due_date', 'design_number','created_at',
             'size', 'gram', 'cent', 'color', 
             'description', 'quantity', 'ordercode', 
             'status', 'additional_images'
@@ -503,7 +503,7 @@ class FullCustomizedOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = FullCustomizedOrder
         fields = [
-            'id','user','new_status' ,'category','due_date', 'design_number',
+            'id','user','new_status' ,'category','due_date', 'design_number','created_at',
             'size', 'gram', 'cent', 'color', 
             'description', 'quantity', 'ordercode', 
             'status', 'additional_images'
@@ -528,7 +528,10 @@ class OrderItemUpdateSerializer(serializers.ModelSerializer):
         model = OrderItem
         fields = ['id', 'quantity']  
 
-
+class OrderStatusUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = ['status'] 
  
 
 class OrderUpdateSerializer(serializers.ModelSerializer):

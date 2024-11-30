@@ -659,25 +659,37 @@ import logging
 # Set up logging
 logger = logging.getLogger(__name__)
 
+import csv
+import re
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from .models import Product, Category, Media, UserType
+import logging
+
+logger = logging.getLogger(__name__)
+
 class ProductCSVUploadView(APIView):
     def post(self, request, *args, **kwargs):
         csv_file = request.FILES.get('file')
 
         if not csv_file:
-            logger.error("No file uploaded.")
+            print("No file uploaded.")
             return Response({"error": "No file uploaded. Please upload a CSV file."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Log the file name and size to ensure it is received correctly
-        logger.info(f"Uploaded file: {csv_file.name}, size: {csv_file.size} bytes")
+        # Print the file name and size to ensure it is received correctly
+        print(f"Uploaded file: {csv_file.name}, size: {csv_file.size} bytes")
 
         # Save the file temporarily
         file_path = default_storage.save(f'tmp/{csv_file.name}', ContentFile(csv_file.read()))
-        logger.info(f"File saved temporarily at {file_path}")
+        print(f"File saved temporarily at {file_path}")
 
         try:
             with default_storage.open(file_path) as file:
                 decoded_file = file.read().decode('utf-8').splitlines()
-                logger.debug(f"Decoded file content: {decoded_file[:200]}")  # Log the first 200 characters of the CSV for verification
+                print(f"Decoded file content: {decoded_file[:200]}")  # Print the first 200 characters of the CSV for verification
                 reader = csv.DictReader(decoded_file)
 
                 expected_headers = {
@@ -688,23 +700,23 @@ class ProductCSVUploadView(APIView):
                 }
 
                 detected_headers = set(reader.fieldnames or [])
-                logger.info(f"Expected headers: {expected_headers}")
-                logger.info(f"Detected headers: {detected_headers}")
+                print(f"Expected headers: {expected_headers}")
+                print(f"Detected headers: {detected_headers}")
 
                 if not expected_headers.issubset(detected_headers):
                     missing_headers = expected_headers - detected_headers
-                    logger.error(f"CSV file is missing required headers: {missing_headers}")
+                    print(f"CSV file is missing required headers: {missing_headers}")
                     return Response({"error": f"CSV file is missing required headers: {missing_headers}"}, status=status.HTTP_400_BAD_REQUEST)
 
                 for row in reader:
                     try:
-                        required_fields = ['SKU', 'product_name', 'category', 'gross_weight', 'net_weight' ]
+                        required_fields = ['SKU', 'product_name', 'category', 'gross_weight', 'net_weight']
                         for field in required_fields:
                             if not row.get(field):
                                 raise ValueError(f"Field '{field}' is required but missing or empty in the row.")
 
                         if Product.objects.filter(SKU=row['SKU']).exists():
-                            logger.warning(f"Product with SKU {row['SKU']} already exists.")
+                            print(f"Product with SKU {row['SKU']} already exists.")
                             continue  
 
                         category_name = row['category']
@@ -718,9 +730,8 @@ class ProductCSVUploadView(APIView):
                             diamond_weight=row.get('diamond_weight', 0),
                             colour_stones=row.get('colour_stones', ''),
                             net_weight=row['net_weight'],
-                          
                         )
-                        logger.info(f"Product with SKU {row['SKU']} created successfully.")
+                        print(f"Product with SKU {row['SKU']} created successfully.")
 
                         if row.get('usertypes'):
                             usertypes_list = [ut.strip() for ut in row['usertypes'].split(',')]
@@ -729,42 +740,54 @@ class ProductCSVUploadView(APIView):
                                 product.usertypes.add(usertype)
 
                         sku = row['SKU']
-                        sku_prefix = sku.replace(" ", "_")
+                        
+                        sku_modified = sku.replace(" ", "_")
+                        print(f"Modified SKU for search: {sku_modified}")
 
                         try:
-                            media_image = Media.objects.filter(image__icontains=sku_prefix).first()
+                            media_image = Media.objects.filter(image__icontains=sku_modified).first()  
                             if media_image:
                                 original_image_name = media_image.image.name
-                                cleaned_image_name = re.sub(r'_[^_]+\.', '.', original_image_name)
+                                cleaned_image_name = re.sub(r'_[^_]+\.', '.', original_image_name)  # Optional: Clean the image name if needed
 
-                                product.product_image = cleaned_image_name
+                                # Print the found image path
+                                print(f"Found matching image: {original_image_name}")
+
+                                product.product_image = original_image_name
                                 product.save()
-                                logger.info(f"Image {cleaned_image_name} assigned to product {sku}.")
+
+                                # Print the image path assigned to the product
+                                print(f"Image {cleaned_image_name} assigned to product {sku}. Product image path: {product.product_image}")
                             else:
+                                print(f"No image found for SKU {sku}. Assigning default image.")
                                 product.product_image = 'products/default_image.jpg'
                                 product.save()
-                                logger.warning(f"No image found for SKU {sku}. Assigning default image.")
-                        except Exception as e:
-                            logger.error(f"Error while searching for image for SKU {sku}: {e}")
-                            logger.exception("Exception details:")
 
-                        logger.info(f"Successfully processed SKU: {sku}")
+                                # Print the default image path
+                                print(f"Default image assigned to product {sku}. Product image path: {product.product_image}")
+
+                        except Exception as e:
+                            print(f"Error while searching for image for SKU {sku}: {e}")
+                            print("Exception details:")
+
+                        print(f"Successfully processed SKU: {sku}")
 
                     except ValueError as ve:
-                        logger.error(f"Validation error for row with SKU {row.get('SKU', 'unknown')}: {ve}")
-                        logger.exception("Exception details:")  # Logs the full stack trace
+                        print(f"Validation error for row with SKU {row.get('SKU', 'unknown')}: {ve}")
+                        print("Exception details:")  # Prints the full stack trace
                         continue  
                     except Exception as e:
-                        logger.error(f"Unexpected error for row with SKU {row.get('SKU', 'unknown')}: {e}")
-                        logger.exception("Exception details:")  # Logs the full stack trace
+                        print(f"Unexpected error for row with SKU {row.get('SKU', 'unknown')}: {e}")
+                        print("Exception details:")  # Prints the full stack trace
                         continue   
 
             return Response({"message": "Products uploaded successfully"}, status=status.HTTP_201_CREATED)
 
         except Exception as e:
-            logger.error(f"Error processing file: {e}")
-            logger.exception("Exception details:")
+            print(f"Error processing file: {e}")
+            print("Exception details:")
             return Response({"error": "Failed to process the uploaded file."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 
 
@@ -1452,7 +1475,20 @@ class UserCartItemCountView(APIView):
 class OrderListView(generics.ListAPIView):
     queryset = Order.objects.all()
     serializer_class = OrderSerializerss
- 
+
+
+class OrderPendingListView(generics.ListAPIView):
+    serializer_class = OrderSerializerss
+
+    def get_queryset(self):
+        return Order.objects.filter(status='pending')
+
+class OrderCompleteListView(generics.ListAPIView):
+    serializer_class = OrderSerializerss
+
+    def get_queryset(self):
+        return Order.objects.filter(status='delivered')
+    
 class OrderUpdateAPIView(APIView):
     def patch(self, request, pk=None):
         try:
@@ -1552,7 +1588,7 @@ class RejectOrderAPIView(APIView):
     
 class  ApprovedOrdersView(APIView):
     def get(self, request):
-        pending_orders = CustomizedOrder.objects.filter(status='approved')
+        pending_orders = CustomizedOrder.objects.filter(status='approved').exclude(new_status='delivered')
         serializer = CustomizedOrderSerializer(pending_orders, many=True)
         return Response(serializer.data)
     
@@ -1653,7 +1689,7 @@ class RejectFullOrderAPIView(APIView):
     
 class  ApprovedFullOrdersView(APIView):
     def get(self, request):
-        pending_orders = FullCustomizedOrder.objects.filter(status='approved')
+        pending_orders = FullCustomizedOrder.objects.filter(status='approved').exclude(new_status='delivered')
         serializer = FullCustomizedOrderListSerializer(pending_orders, many=True)
         return Response(serializer.data)
     
@@ -1916,3 +1952,37 @@ class ContactMessageAPIView(APIView):
                 return Response({'status': 500, 'error': 'Failed to save contact message. Please try again later.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST) 
+    
+class DeliveredOrdersView(APIView):
+    def get(self, request, format=None):
+ 
+        delivered_orders = CustomizedOrder.objects.filter(new_status='delivered')
+        
+   
+        serializer = CustomizedOrderSerializer(delivered_orders, many=True)
+        
+     
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class DeliveredFullOrdersView(APIView):
+    def get(self, request, format=None):
+ 
+        delivered_orders = FullCustomizedOrder.objects.filter(new_status='delivered')
+        
+   
+        serializer = FullCustomizedOrderListSerializer(delivered_orders, many=True)
+        
+     
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class OrderStatusUpdateAPIView(APIView):
+   
+
+    def patch(self, request, order_id):
+        order = get_object_or_404(Order, id=order_id)
+        serializer = OrderStatusUpdateSerializer(order, data=request.data, partial=True)
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
