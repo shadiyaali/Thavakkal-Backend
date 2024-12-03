@@ -818,14 +818,24 @@ class UserLoginView(APIView):
             return Response({'error': 'Email and password must be provided'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            user =user_model.objects.get(email=email)
+            user = user_model.objects.get(email=email)
+
            
-            refresh = RefreshToken.for_user(user)  
+            if user.is_staff or user.is_superuser:
+                return Response({'error': 'Admins cannot log in through this endpoint'}, status=status.HTTP_403_FORBIDDEN)
+
+       
+            if not user.check_password(password):
+                return Response({'error': 'Invalid email or password'}, status=status.HTTP_401_UNAUTHORIZED)
+
+    
+            refresh = RefreshToken.for_user(user)
             return Response({
                 'access': str(refresh.access_token),
                 'refresh': str(refresh),
             }, status=status.HTTP_200_OK)
-        except User.DoesNotExist:
+
+        except user_model.DoesNotExist:
             return Response({'error': 'Invalid email or password'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
