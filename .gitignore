@@ -1,10 +1,49 @@
- SECRET_KEY =django-insecure-nlt*ny*q3%^4n%3=w@6ar^6qawc1u)67x^dgo8jm%32p6x@-6c
-EMAIL_HOST_USER =caratreeDiamonds@gmail.com
-EMAIL_HOST_PASSWORD =mjft aaty xxkc rwry
-DATABASE_ENGINE=django.db.backends.postgresql_psycopg2
-DATABASE_NAME=Thavakkal
-DATABASE_USER=postgres
-DATABASE_PASSWORD=Cara@963
-DATABASE_HOST=localhost
-DATABASE_PORT=5432
+# Byte-compiled / optimized / DLL files
+_pycache_/
+*.py[cod]
+*$py.class
 
+# Local development settings
+.env
+
+# Static files
+/staticfiles/
+
+# Media files
+/media/
+
+# Secret key
+*.secret_key
+
+# Database 
+
+# *.sqlite3
+
+# IDE specific files
+.idea/
+.vscode/
+
+# Compiled Python files
+*.pyc
+
+# macOS
+.DS_Store
+
+# Byte-compiled files (Windows)
+*.pyo
+*.pyc
+
+# Cache directory
+_pycache_/
+
+# Python egg metadata
+*.egg-info/
+
+# Logs
+log/
+
+# Temporary files
+*.log
+
+# Virtual environment
+env/
