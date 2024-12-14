@@ -44,6 +44,8 @@ urlpatterns = [
    path('cart/update/<str:sku>/', UpdateCartQuantityView.as_view(), name='update-cart-quantity'),
    path('cart-items/', CartItemsView.as_view(), name='cart-items-list'),
    path('my-orders/', UserOrderListView.as_view(), name='user-order-list'),
+   path('user-cus-orders/', UserApprovedOrdersView.as_view(), name='user-order-list'),
+   path('user-fullcus-orders/', UserApprovedFullOrdersView.as_view(), name='user-order-list'),
    path('customized-products/<int:pk>/', CustomizedProductDetail.as_view(), name='customized-product-detail'),
    path('customized-products/<str:SKU>/', CustomizedProductSKUDetailView.as_view(), name='customized-product-detail'),
    path('customized-orders/', CustomizedOrderCreateView.as_view(), name='customized-order-create'),
@@ -80,5 +82,8 @@ urlpatterns = [
    path('order/<int:order_id>/update-status/', OrderStatusUpdateAPIView.as_view(), name='order_status_update'),
    path('orders/pending/', OrderPendingListView.as_view(), name='pending_orders'),
    path('orders/delivered/', OrderCompleteListView.as_view(), name='pending_orders'),
+   path('my-complete-orders/', UserCompleteOrderListView.as_view(), name='user-order-list'),
+   path('user-complete-cus-orders/', UserCompleteApprovedOrdersView.as_view(), name='user-order-list'),
+   path('user-complete-fullcus-orders/', UserCompleteApprovedFullOrdersView.as_view(), name='user-order-list'),
 ]
  

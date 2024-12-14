@@ -18,7 +18,7 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent
 
  
-SECRET_KEY = 'django-insecure-&7+b(%vue50q8fir!kmvu#3+c+t+d-qyee_0ytv*9+e7p=ni_u'
+# SECRET_KEY = 'django-insecure-&7+b(%vue50q8fir!kmvu#3+c+t+d-qyee_0ytv*9+e7p=ni_u'
 SECRET_KEY = config('SECRET_KEY')
  
 DEBUG = True

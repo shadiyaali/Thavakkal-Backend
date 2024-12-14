@@ -184,7 +184,7 @@ class Cart(models.Model):
 
 class Order(models.Model):
     STATUS_CHOICES = [
-        ('pending', 'Pending'),
+        ('pending', 'pending'),
         ('delivered', 'delivered'),
          
     ] 

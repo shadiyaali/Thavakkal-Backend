@@ -1275,16 +1275,58 @@ class UserOrderListView(generics.ListAPIView):
     serializer_class = OrderSerializerss
 
     def get_queryset(self):
-        user_orders = Order.objects.filter(user=self.request.user)
-        
-        
+        user = self.request.user
+        print(f"Authenticated user: {user.username}")  
+
+        user_orders = Order.objects.filter(user=user, status='pending')
+
+        print(f"User Orders: {user_orders}")  
+
+      
         for order in user_orders:
             print(f"Order ID: {order.id}, Total Gross Weight: {order.total_gross_weight}, "
                   f"Total Diamond Weight: {order.total_diamond_weight}, "
                   f"Total Color Stones: {order.total_colour_stones}, "
-                  f"Total Net Weight: {order.total_net_weight}")
+                  f"Total Net Weight: {order.total_net_weight}, Status: {order.status}")
         
         return user_orders
+
+
+class UserApprovedOrdersView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+     
+        user = request.user
+        
+      
+        pending_orders = CustomizedOrder.objects.filter(
+            user=user, 
+         
+        ).exclude(new_status='delivered')
+        
+      
+        serializer = CustomizedOrderSerializer(pending_orders, many=True)
+        
+        return Response(serializer.data)
+class  UserApprovedFullOrdersView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+   
+        user = request.user
+        
+      
+        pending_orders = FullCustomizedOrder.objects.filter(
+            user=user, 
+         
+        ).exclude(new_status='delivered')
+        
+        # Serialize the orders
+        serializer = FullCustomizedOrderSerializer(pending_orders, many=True)
+        
+        return Response(serializer.data)
+    
     
 class CustomizedProductDetail(generics.RetrieveAPIView):
     queryset = CustomizedProduct.objects.all()
@@ -1602,7 +1644,9 @@ class  ApprovedOrdersView(APIView):
         serializer = CustomizedOrderSerializer(pending_orders, many=True)
         return Response(serializer.data)
     
-    
+
+
+
 from datetime import timedelta
 from django.utils import timezone
 class GenerateOrderIDView(APIView):
@@ -1996,3 +2040,65 @@ class OrderStatusUpdateAPIView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserCompleteOrderListView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = OrderSerializerss
+
+    def get_queryset(self):
+        user = self.request.user
+        print(f"Authenticated user: {user.username}")  
+
+        user_orders = Order.objects.filter(user=user, status='delivered')
+
+        print(f"User Orders: {user_orders}")  
+
+      
+        for order in user_orders:
+            print(f"Order ID: {order.id}, Total Gross Weight: {order.total_gross_weight}, "
+                  f"Total Diamond Weight: {order.total_diamond_weight}, "
+                  f"Total Color Stones: {order.total_colour_stones}, "
+                  f"Total Net Weight: {order.total_net_weight}, Status: {order.status}")
+        
+        return user_orders
+
+
+
+class UserCompleteApprovedOrdersView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+     
+        user = request.user
+        
+      
+        pending_orders = CustomizedOrder.objects.filter(
+            user=user, new_status='delivered'
+         
+        ) 
+        
+      
+        serializer = CustomizedOrderSerializer(pending_orders, many=True)
+        
+        return Response(serializer.data)
+    
+    
+class  UserCompleteApprovedFullOrdersView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+   
+        user = request.user
+        
+      
+        pending_orders = FullCustomizedOrder.objects.filter(
+            user=user, new_status='delivered'
+         
+        ) 
+        
+        # Serialize the orders
+        serializer = FullCustomizedOrderSerializer(pending_orders, many=True)
+        
+        return Response(serializer.data)
+    
