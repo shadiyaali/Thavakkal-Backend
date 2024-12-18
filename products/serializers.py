@@ -408,7 +408,10 @@ class OrderSerializerss(serializers.ModelSerializer):
                   'total_colour_stones', 'total_net_weight', 'created_at', 'order_items']
         extra_kwargs = {'user': {'read_only': True}}
         
- 
+
+
+
+
 class ColorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Color

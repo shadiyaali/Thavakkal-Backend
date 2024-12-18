@@ -81,6 +81,7 @@ urlpatterns = [
    path('full-delivered-orders/', DeliveredFullOrdersView.as_view(), name='delivered_orders_api'),
    path('order/<int:order_id>/update-status/', OrderStatusUpdateAPIView.as_view(), name='order_status_update'),
    path('orders/pending/', OrderPendingListView.as_view(), name='pending_orders'),
+   path('orders/<int:order_id>/', OrderItemsByOrderIdView.as_view(), name='order-items-by-id'),
    path('orders/delivered/', OrderCompleteListView.as_view(), name='pending_orders'),
    path('my-complete-orders/', UserCompleteOrderListView.as_view(), name='user-order-list'),
    path('user-complete-cus-orders/', UserCompleteApprovedOrdersView.as_view(), name='user-order-list'),
