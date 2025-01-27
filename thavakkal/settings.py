@@ -18,7 +18,7 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent
 
  
-# SECRET_KEY = 'django-insecure-&7+b(%vue50q8fir!kmvu#3+c+t+d-qyee_0ytv*9+e7p=ni_u'
+
 SECRET_KEY = config('SECRET_KEY')
  
 DEBUG = True
@@ -132,15 +132,7 @@ SIMPLE_JWT = {
 
 WSGI_APPLICATION = 'thavakkal.wsgi.application'
  
-# Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
 
 
 DATABASES = {

@@ -86,5 +86,6 @@ urlpatterns = [
    path('my-complete-orders/', UserCompleteOrderListView.as_view(), name='user-order-list'),
    path('user-complete-cus-orders/', UserCompleteApprovedOrdersView.as_view(), name='user-order-list'),
    path('user-complete-fullcus-orders/', UserCompleteApprovedFullOrdersView.as_view(), name='user-order-list'),
+   
 ]
  

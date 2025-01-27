@@ -2079,3 +2079,5 @@ class  UserCompleteApprovedFullOrdersView(APIView):
         
         return Response(serializer.data)
     
+    
+ 
