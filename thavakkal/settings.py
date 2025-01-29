@@ -187,6 +187,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://shop.caratreediamonds.com",
     "https://master.d3btcpc72guulu.amplifyapp.com",
     "https://main.d1c5fqrayqg473.amplifyapp.com"
+    "https://portal.caratreediamonds.com"
     
    
 ]
